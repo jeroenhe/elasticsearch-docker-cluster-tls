@@ -22,7 +22,13 @@ processors:
 setup.template.enabled: false
 setup.ilm.enabled: false
 
+# https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html
+# https://www.elastic.co/guide/en/beats/libbeat/8.0/config-file-format-env-vars.html
 output.elasticsearch:
-  hosts: [ "elasticsearch1:9200", "elasticsearch2:9200", "elasticsearch3:9200" ]
+  # [ "https://elasticsearch1:9200", "https://elasticsearch2:9200", "https://elasticsearch3:9200" ]
+  hosts: '${ES_HOST_SEED}'
+  ssl.certificate_authorities: '${ES_SSL_CA}'
+  username: '${ES_AUTH_USERNAME}'
+  password: '${ES_AUTH_PASSWORD}'
   index: "logs_%{[host]}"
   bulk_max_size: 1000

@@ -10,11 +10,27 @@ from elasticsearch import Elasticsearch
 LOGGER_FORMAT = '%(asctime)-15s %(message)s'
 LOGGER = None
 ES_HOST_SEED = os.environ['ES_HOST_SEED'].split(',')
+ES_SSL_CA = None
+ES_AUTH_USERNAME = None
+ES_AUTH_PASSWORD = None
+if 'ES_SSL_CA' in os.environ:
+    ES_SSL_CA = os.environ['ES_SSL_CA']
+if 'ES_AUTH_USERNAME' in os.environ:
+    ES_AUTH_USERNAME = os.environ['ES_AUTH_USERNAME']
+if 'ES_AUTH_PASSWORD' in os.environ:
+    ES_AUTH_PASSWORD = os.environ['ES_AUTH_PASSWORD']
 
 
 def read_data():
     # https://elasticsearch-py.readthedocs.io/en/master/
-    es = Elasticsearch(ES_HOST_SEED, sniff_on_start=True, sniff_on_connection_fail=True,)
+    ssl_options = dict()
+    if ES_SSL_CA:
+        ssl_options['verify_certs'] = True
+        ssl_options['ca_certs'] = ES_SSL_CA
+        if ES_AUTH_USERNAME and ES_AUTH_PASSWORD:
+            ssl_options['http_auth'] = (ES_AUTH_USERNAME, ES_AUTH_PASSWORD)
+    LOGGER.info("ssl_options: %s", ssl_options)
+    es = Elasticsearch(ES_HOST_SEED, sniff_on_start=False, sniff_on_node_failure=True, **ssl_options)
     while True:
         # Count the number of records in our index
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-count.html

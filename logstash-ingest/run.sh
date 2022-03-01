@@ -4,7 +4,12 @@
 
 echo "Verify index does not yet exist, so we import it only once..."
 
-EXISTS=$(curl -sSf "http://elasticsearch1:9200/blogs/_count")
+if [ ! -f "${ES_SSL_CA}" ]; then
+    echo "ES_SSL_CA ($ES_SSL_CA) does not exists!"
+    exit 1
+fi
+
+curl -sSf --cacert "${ES_SSL_CA}" "https://elasticsearch1:9200/blogs/_count" -u "${ES_AUTH_USERNAME}:${ES_AUTH_PASSWORD}" 1>/dev/null
 EXIT_CODE=$?
 
 echo "Curl exited with '${EXIT_CODE}'"
