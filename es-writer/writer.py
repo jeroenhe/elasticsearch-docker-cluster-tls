@@ -29,7 +29,7 @@ def write_data():
         ssl_options['verify_certs'] = True
         ssl_options['ca_certs'] = ES_SSL_CA
         if ES_AUTH_USERNAME and ES_AUTH_PASSWORD:
-            ssl_options['http_auth'] = (ES_AUTH_USERNAME, ES_AUTH_PASSWORD)
+            ssl_options['basic_auth'] = (ES_AUTH_USERNAME, ES_AUTH_PASSWORD)
     LOGGER.info("ssl_options: %s", ssl_options)
     es = Elasticsearch(ES_HOST_SEED, sniff_on_start=False, sniff_on_node_failure=True, **ssl_options)
     counter=-1
@@ -45,7 +45,7 @@ def write_data():
 
         # when this service restarted, the counter is reset. When a document with the same id already
         # exists, it is updated.
-        res = es.index(index="test-index", id=counter, body=doc)
+        res = es.index(index="test-index", id=counter, document=doc)
 
         LOGGER.info("Index result for text '%s': %s", doc['text'], res['result'])
         time.sleep(5)

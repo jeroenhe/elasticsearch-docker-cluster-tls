@@ -16,12 +16,12 @@ services:
           echo "Set the KIBANA_PASSWORD environment variable in the .env file";
           exit 1;
         fi;
-        if [ ! -f certs/ca.zip ]; then
+        if [ ! -f config/certs/ca.zip ]; then
           echo "Creating CA";
           bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
           unzip config/certs/ca.zip -d config/certs;
         fi;
-        if [ ! -f certs/certs.zip ]; then
+        if [ ! -f config/certs/certs.zip ]; then
           echo "Creating certs";
           echo -ne \
           "instances:\n"\
@@ -47,16 +47,25 @@ services:
           bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
           unzip config/certs/certs.zip -d config/certs;
         fi;
-        echo "Setting file permissions"
-        chown -R root:root config/certs;
-        find . -type d -exec chmod 750 \{\} \;;
-        find . -type f -exec chmod 640 \{\} \;;
-        chmod 644 config/certs/ca/ca.crt
-        echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch1:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
-        echo "Setting ${KIBANA_USER} password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u elastic:${ELASTIC_PASSWORD} -H "Content-Type: application/json" https://elasticsearch1:9200/_security/user/${KIBANA_USER}/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
-        echo "All done!";
+        if [ ! -f "/.configured" ]; then
+          echo "Setting file permissions"
+          chown -R root:root config/certs;
+          find . -type d -exec chmod 750 \{\} \;;
+          find . -type f -exec chmod 640 \{\} \;;
+          chmod 755 config
+          chmod 755 config/certs
+          chmod 755 config/certs/ca
+          chmod 644 config/certs/ca/ca.crt
+          echo "Waiting for Elasticsearch availability";
+          until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch1:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+          echo "Setting ${KIBANA_USER} password";
+          until curl -s -X POST --cacert config/certs/ca/ca.crt -u "${ELASTIC_USER}:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch1:9200/_security/user/${KIBANA_USER}/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+          echo "Creating user ${APP_USER}";
+          # grep -q "^{\"created\":true}"
+          until curl -s f -X POST --cacert config/certs/ca/ca.crt -u "${ELASTIC_USER}:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch1:9200/_security/user/${APP_USER} -d "{ \"password\" : \"${APP_PASSWORD}\", \"roles\" : [ \"superuser\" ]}" ; do sleep 10; done;
+          echo "All done!";
+          touch "/.configured"
+        fi
       '
     volumes:
       - type: volume
@@ -107,7 +116,6 @@ services:
       - "xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt"
       - "xpack.security.transport.ssl.verification_mode=certificate"
       - "xpack.license.self_generated.type=${LICENSE}"
-      - "xpack.ml.enabled=false"
       - "xpack.graph.enabled=false"
       - "xpack.watcher.enabled=false"
       - "path.repo=/shared_folder"
@@ -170,10 +178,6 @@ services:
       - "xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt"
       - "xpack.security.transport.ssl.verification_mode=certificate"
       - "xpack.license.self_generated.type=${LICENSE}"
-      # - "xpack.security.authc.anonymous.username=anonymous_user"
-      # - "xpack.security.authc.anonymous.roles=super_admin"
-      # - "xpack.security.authc.anonymous.authz_exception=true"
-      - "xpack.ml.enabled=false"
       - "xpack.graph.enabled=false"
       - "xpack.watcher.enabled=false"
       - "path.repo=/shared_folder"
@@ -233,7 +237,6 @@ services:
       - "xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt"
       - "xpack.security.transport.ssl.verification_mode=certificate"
       - "xpack.license.self_generated.type=${LICENSE}"
-      - "xpack.ml.enabled=false"
       - "xpack.graph.enabled=false"
       - "xpack.watcher.enabled=false"
       - "path.repo=/shared_folder"
@@ -265,14 +268,13 @@ services:
       - "XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=UEs2S28DisjIMEZglnjMUEs2S28DisjIMEZglnjM"
       - "XPACK_REPORTING_ENCRYPTIONKEY=UEs2S28DisjIMEZglnjMUEs2S28DisjIMEZglnjM"
       - "XPACK_SECURITY_ENCRYPTIONKEY=UEs2S28DisjIMEZglnjMUEs2S28DisjIMEZglnjM"
+      - "ELASTICSEARCH_USERNAME=${KIBANA_USER}"
+      - "ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}"
       - "ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt"
-      - "ELASTICSEARCH_USERNAME=$KIBANA_USER"
-      - "ELASTICSEARCH_PASSWORD=$KIBANA_PASSWORD"
     ports:
-      - "5601:5601"
+      - "${KIBANA_PORT}:5601"
     healthcheck:
-      # test: ["CMD-SHELL", "curl -sf http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
-      test: ["CMD-SHELL", "curl -sf http://localhost:5601"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
       interval: 10s
       timeout: 10s
       retries: 120
@@ -338,9 +340,7 @@ services:
     build: ./logstash-ingest
     restart: "no"
     environment:
-      # - 'ES_HOST_SEED=["https://elasticsearch3:9200","https://elasticsearch2:9200","https://elasticsearch1:9200"]'
-      # - 'ES_HOST_SEED=https://elasticsearch3:9200,https://elasticsearch2:9200,https://elasticsearch1:9200'
-      - 'ES_HOST_SEED=https://elasticsearch3:9200'
+      - 'ES_HOST_SEED=https://elasticsearch2:9200'
       - "ES_SSL_CA=/ssl/ca/ca.crt"
       - "ES_AUTH_USERNAME=$APP_USER"
       - "ES_AUTH_PASSWORD=$APP_PASSWORD"

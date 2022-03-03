@@ -9,16 +9,17 @@ if [ ! -f "${ES_SSL_CA}" ]; then
     exit 1
 fi
 
-curl -sSf --cacert "${ES_SSL_CA}" "http://elasticsearch1:9200/logs_server1/_count" -u "${ES_AUTH_USERNAME}:${ES_AUTH_PASSWORD}" 1>/dev/null
+curl -sSf --cacert "${ES_SSL_CA}" "https://elasticsearch1:9200/logs_server1/_count" -u "${ES_AUTH_USERNAME}:${ES_AUTH_PASSWORD}" 1>/dev/null
 EXIT_CODE=$?
 
 echo "Curl exited with '${EXIT_CODE}'"
 
 if [ "${EXIT_CODE}" != "0" ]; then
     echo "Starting log files import for /data/elastic*..."
+    # Debug: ./filebeat -e -d "*" -c /data/filebeat.yml
     ./filebeat -c /data/filebeat.yml
 else
-    echo "Indices logs_server* where already imported. Skipping."
+    echo "Indices logs_server* were already imported. Skipping."
 fi
 
 exit 0

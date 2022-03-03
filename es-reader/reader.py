@@ -28,7 +28,7 @@ def read_data():
         ssl_options['verify_certs'] = True
         ssl_options['ca_certs'] = ES_SSL_CA
         if ES_AUTH_USERNAME and ES_AUTH_PASSWORD:
-            ssl_options['http_auth'] = (ES_AUTH_USERNAME, ES_AUTH_PASSWORD)
+            ssl_options['basic_auth'] = (ES_AUTH_USERNAME, ES_AUTH_PASSWORD)
     LOGGER.info("ssl_options: %s", ssl_options)
     es = Elasticsearch(ES_HOST_SEED, sniff_on_start=False, sniff_on_node_failure=True, **ssl_options)
     while True:

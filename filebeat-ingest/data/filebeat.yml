@@ -18,6 +18,9 @@ processors:
 
  - drop_fields:
      fields: ["message", "prospector", "beat", "source", "offset"]
+     ignore_missing: true
+
+logging.level: info
 
 setup.template.enabled: false
 setup.ilm.enabled: false
