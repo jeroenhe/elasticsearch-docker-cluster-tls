@@ -28,6 +28,8 @@ Example taken from the [Elastic Engineer I training](https://training.elastic.co
 
 ## Get it up and running
 
+Important: first modify the `.env` file and add (randomly generated) passwords for the variables `ELASTIC_PASSWORD`, `KIBANA_PASSWORD` and `APP_PASSWORD` and save this file to disk.
+
 Make sure you provide docker with enough memory (the default 2gb of memory is not enough, consult your Docker Desktop configuration to change this), before you run it with
 
     docker-compose up -d
