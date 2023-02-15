@@ -7,7 +7,7 @@ Disclaimer: this setup is not meant for production usage!
 ## Prerequisites
 
 - a machine with enough RAM (at least 8 gb)
-- `docker` and `docker-compose` installed (on Mac or Windows, Docker Desktop installs both of them).
+- `docker` (including `docker compose`) installed (on Mac or Windows, Docker Desktop installs both of them).
 
 ## Elasticsearch indices
 
@@ -32,7 +32,7 @@ Important: first modify the `.env` file and add (randomly generated) passwords f
 
 Make sure you provide docker with enough memory (the default 2gb of memory is not enough, consult your Docker Desktop configuration to change this), before you run it with
 
-    docker-compose up -d
+    docker compose up -d
 
 OR
 
@@ -64,23 +64,23 @@ When registering a (fs-type) snapshot repository inside elasticsearch, you shoul
 ## RBAC related commands
 
     # Add a new user:
-    docker-compose exec elasticsearch1 /bin/bash
+    docker compose exec elasticsearch1 /bin/bash
     bin/elasticsearch-users useradd newelastic -p newelastic1 -r superuser
 
     # Resets an existing user' password:
-    docker-compose exec elasticsearch1 /bin/bash
+    docker compose exec elasticsearch1 /bin/bash
     elasticsearch-reset-password -b -u elastic --url https://elasticsearch1:9200
     Password for the [elastic] user successfully reset.
     New value: xxxxx
 
     # Change a user password (works for non-system accounts):
-    docker-compose exec elasticsearch1 /bin/bash
+    docker compose exec elasticsearch1 /bin/bash
     bin/elasticsearch-users passwd UserToChangePasswordFor
 
 ## Test a service
 
-    docker-compose run --no-deps logstash-ingest /bin/bash
-    docker-compose run --no-deps filebeat-ingest /bin/bash
+    docker compose run --no-deps logstash-ingest /bin/bash
+    docker compose run --no-deps filebeat-ingest /bin/bash
 
 ## Investigate certs
 
@@ -94,7 +94,7 @@ Certificates are created at the setup' container startup. To investigate
 
 Clean all created containers and volumes by executing:
 
-    docker-compose down -v
+    docker compose down -v
 
 or
 

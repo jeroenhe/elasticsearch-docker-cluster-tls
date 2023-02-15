@@ -9,7 +9,9 @@ from elasticsearch import Elasticsearch
 
 
 LOGGER_FORMAT = '%(asctime)-15s %(message)s'
-LOGGER = None
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT)
+LOGGER = logging.getLogger('es-writer')
+
 ES_HOST_SEED = os.environ['ES_HOST_SEED'].split(',')
 ES_SSL_CA = None
 ES_AUTH_USERNAME = None
@@ -52,9 +54,6 @@ def write_data():
 
 
 def main():
-    global LOGGER
-    logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT)
-    LOGGER = logging.getLogger('es-writer')
     LOGGER.info("es-writer was started")
     while True:
         try:

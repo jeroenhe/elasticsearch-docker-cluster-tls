@@ -1,4 +1,5 @@
-FROM docker.elastic.co/logstash/logstash:8.0.0
+ARG STACK_VERSION
+FROM docker.elastic.co/logstash/logstash:${STACK_VERSION}
 
 USER root
 

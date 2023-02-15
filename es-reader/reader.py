@@ -8,7 +8,9 @@ from elasticsearch import Elasticsearch
 
 
 LOGGER_FORMAT = '%(asctime)-15s %(message)s'
-LOGGER = None
+logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT)
+LOGGER = logging.getLogger('es-reader')
+
 ES_HOST_SEED = os.environ['ES_HOST_SEED'].split(',')
 ES_SSL_CA = None
 ES_AUTH_USERNAME = None
@@ -40,15 +42,12 @@ def read_data():
         # Search for the latest record
         # https://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch.search
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-search.html
-        res = es.search(index="test-index", body={"size": 1, "sort": [{"timestamp": "desc"}], "query": {"match_all": {}}})
+        res = es.search(index="test-index", size=1, sort={"timestamp": "desc"}, query={"match_all": {}})
         LOGGER.info("Took: %sms, Got %d hits. First hit: %s", res['took'], res['hits']['total']['value'], res['hits']['hits'][0]["_source"])
         time.sleep(5)
 
 
 def main():
-    global LOGGER
-    logging.basicConfig(level=logging.INFO, format=LOGGER_FORMAT)
-    LOGGER = logging.getLogger('es-reader')
     LOGGER.info("es-reader was started")
     while True:
         try:
